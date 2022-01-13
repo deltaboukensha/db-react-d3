@@ -1,10 +1,7 @@
-import CircleExample from "./circleExample";
-import SortingAlgorithms from "./sorting";
-
 const Home = () => {
   return (
     <>
-      {SortingAlgorithms()}
+      <h1>Home</h1>
     </>
   );
 };
