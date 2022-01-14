@@ -26,7 +26,7 @@ enum ProjectionMode {
   geoEqualEarth = "Geo Equal Earth",
   geoEquirectangular = "Geo Equirectangular",
   geoMercator = "Geo Mercator",
-  geoTransverseMercator = "Geo Transverse Mercator"
+  geoTransverseMercator = "Geo Transverse Mercator",
 }
 
 const loadText = (url: string) => {
@@ -142,9 +142,14 @@ const renderFunction = (args: Args) => {
 
   if (!projection) throw "unsupported projectionType";
 
-  projection
-    .rotate([args.centerX, args.centerY])
-    .scale(100)
+  projection.rotate([args.centerX, args.centerY]);
+
+  let scale = 100;
+  if (args.worldTransform) {
+    scale = args.worldTransform.k * 100;
+  }
+
+  projection.scale(scale);
 
   svg.selectAll("g").remove();
 
@@ -172,8 +177,6 @@ const renderFunction = (args: Args) => {
         feature.properties.name
       } - ${feature.id}${lookupCases[feature.id] ? `\nCases: ${lookupCases[feature.id].cases}` : ""}`;
     });
-
-  svg.select("g#world").attr("transform", args.worldTransform);
 
   const dragBehavior = d3
     .drag()
@@ -291,7 +294,7 @@ const CovidPage = () => {
 
   return (
     <>
-      <Box padding={5}>
+      <Box padding={"1em"}>
         <h1>Covid Chart</h1>
         <h2>Sources:</h2>
         <ul>
@@ -316,7 +319,12 @@ const CovidPage = () => {
           disableSelectionOnClick
         />
       </Box>
-      <Box display="flex" justifyContent="center" alignItems="center">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        padding={"1em"}
+      >
         <FormControl component="fieldset">
           <RadioGroup
             name="radio-buttons-group"
@@ -337,7 +345,7 @@ const CovidPage = () => {
           </RadioGroup>
         </FormControl>
       </Box>
-      <Box padding={5}>
+      <Box padding={"1em"}>
         <Slider
           min={0}
           max={dayDiff}
