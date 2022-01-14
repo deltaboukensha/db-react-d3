@@ -101,17 +101,26 @@ const renderFunction = (args: Args) => {
 
   const svg = d3.select("svg#svg");
   const viewDay = addDays(new Date(args.minDate), args.dayOffset);
-  const viewRows = args.covidData.filter((r) => {
-    return isEqual(r.date, viewDay);
-  });
-
   const cases = args.covidData.map((r) => r.cases);
   const maxCases = Math.max(...cases);
+  const lookupData = args.covidData.reduce((a, c) => {
+    const pastData = a[c.countryCode];
 
-  const lookupCases = viewRows.reduce((a, c) => {
-    a[c.countryCode] = c;
+    if (!pastData) {
+      a[c.countryCode] = c;
+    } else {
+      const pastDiff = Math.abs(
+        differenceInCalendarDays(pastData.date, viewDay)
+      );
+      const currDiff = Math.abs(differenceInCalendarDays(c.date, viewDay));
+
+      if (currDiff < pastDiff) {
+        a[c.countryCode] = c;
+      }
+    }
+
     return a;
-  }, {}) as { [countryCode: string]: CovidRow };
+  }, {} as { [countryCode: string]: CovidRow });
 
   const projection =
     args.projectionMode === ProjectionMode.geoAlbers
@@ -161,7 +170,7 @@ const renderFunction = (args: Args) => {
     .enter()
     .append("path")
     .attr("fill", function (feature: GeoFeature) {
-      const match = viewRows.find((r) => r.countryCode === feature.id);
+      const match = lookupData[feature.id];
       if (!match) return "gray";
       return d3.interpolateRgb(
         "gray",
@@ -175,7 +184,7 @@ const renderFunction = (args: Args) => {
     .text(function (feature: GeoFeature) {
       return `${
         feature.properties.name
-      } - ${feature.id}${lookupCases[feature.id] ? `\nCases: ${lookupCases[feature.id].cases}` : ""}`;
+      } - ${feature.id}${lookupData[feature.id] ? `\nCases: ${lookupData[feature.id].cases}` : ""}`;
     });
 
   const dragBehavior = d3
